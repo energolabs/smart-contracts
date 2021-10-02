@@ -42,7 +42,7 @@ contract('Watt', function(accounts) {
             return instance.region.call();
         }).then(function(region) {
             console.log(region);
-            assert.equal(region, 'CHINA', "bad region");
+            assert.equal(region, 'China', "bad region");
         });
     });
 

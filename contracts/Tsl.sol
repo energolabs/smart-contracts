@@ -1,16 +1,16 @@
-pragma solidity ^0.4.15;
+pragma solidity >= 0.4.0 < 0.7.0;
 import "../contracts/HumanStandardToken.sol";
 
 contract Tsl is HumanStandardToken
 {
-    function Tsl(uint256 _initialAmount,
-        string _tokenName,
+    constructor(uint256 _initialAmount,
+        string memory _tokenName,
         uint8 _decimalUnits,
-        string _tokenSymbol)
+        string memory _tokenSymbol)
         HumanStandardToken(_initialAmount,
             _tokenName,
             _decimalUnits,
             _tokenSymbol
-        )
+        ) public
     {}
 }
