@@ -1,4 +1,4 @@
-pragma solidity ^0.4.15;
+pragma solidity >= 0.4.0 < 0.7.0;
 
 import './Owner.sol';
 import './SafeMath.sol';
@@ -15,33 +15,34 @@ contract Exchange is SafeMath, Owner, Secp256k1Curve{
   event Deposit(address token, address user, uint amount, uint balance);
   event Withdraw(address token, address user, uint amount, uint balance);
 
-  function Exchange() {
+  constructor() public {
   }
 
-  function() {
+  function() external{
     revert();
   }
 
-  function order(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce) {
-    bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+  function order(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce) public {
+    bytes32 hash = sha256(abi.encodePacked(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce));
     orders[msg.sender][hash] = true;
-    Order(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, msg.sender);
+    emit Order(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, msg.sender);
   }
 
-  function pubkeyToAddress(uint[2] P) constant returns(address) {
-    bytes memory pubkey = new bytes(33);
-    pubkey[0] = 2;
+  function pubkeyToAddress(uint[2] memory P) public view returns(address) {
+    bytes memory pubkey = new bytes(33);    
+    pubkey[0] = byte(0x02);
+    
     for (uint8 i=0;i<32;i++)
     {
         pubkey[i+1] = bytes32(P[0])[i];
     }
-    return address(ripemd160(sha256(pubkey)));
+    return address(ripemd160(abi.encodePacked(sha256(pubkey))));
   }
 
-  function trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint amount, uint[2] P, uint[2] rs) {
-    if (tokenGet == 0 || tokenGive == 0) revert();
+  function trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint amount, uint[2] memory P, uint[2] memory rs) public {
+    if (tokenGet == address(0) || tokenGive == address(0)) revert();
     //amount is in amountGet terms
-    bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+    bytes32 hash = sha256(abi.encodePacked(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce));
     address user = pubkeyToAddress(P);
     if (!(
       (orders[user][hash] || validateSignature(hash, rs, P)) &&
@@ -50,7 +51,7 @@ contract Exchange is SafeMath, Owner, Secp256k1Curve{
     )) revert();
     tradeBalances(tokenGet, amountGet, tokenGive, amountGive, user, amount);
     orderFills[user][hash] = safeAdd(orderFills[user][hash], amount);
-    Trade(tokenGet, amount, tokenGive, amountGive * amount / amountGet, user, msg.sender);
+    emit Trade(tokenGet, amount, tokenGive, amountGive * amount / amountGet, user, msg.sender);
   }
 
   function tradeBalances(address tokenGet, uint amountGet, address tokenGive, uint amountGive, address user, uint amount) private {
@@ -58,7 +59,7 @@ contract Exchange is SafeMath, Owner, Secp256k1Curve{
     if (!Token(tokenGive).transferFrom(user, msg.sender, safeMul(amountGive, amount) / amountGet)) revert();
   }
 
-  function testTrade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint[2] P, uint[2] rs, uint amount, address sender) constant returns(bool) {
+  function testTrade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint[2] memory P, uint[2] memory rs, uint amount, address sender) public returns(bool) {
     if (!(
       Token(tokenGet).balanceOf(sender) >= amount &&
       availableVolume(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, P, rs) >= amount
@@ -66,8 +67,8 @@ contract Exchange is SafeMath, Owner, Secp256k1Curve{
     return true;
   }
 
-  function availableVolume(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint[2] P, uint[2] rs) constant returns(uint) {
-    bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+  function availableVolume(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint[2] memory P, uint[2] memory rs) public returns(uint) {
+    bytes32 hash = sha256(abi.encodePacked(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce));
     address user = pubkeyToAddress(P);
     if (!(
       (orders[user][hash] || validateSignature(hash, rs, P)) &&
@@ -80,16 +81,16 @@ contract Exchange is SafeMath, Owner, Secp256k1Curve{
     return available2;
   }
 
-  function amountFilled(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s) constant returns(uint) {
-    bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+  function amountFilled(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s) public view returns(uint) {
+    bytes32 hash = sha256(abi.encodePacked(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce));
     return orderFills[user][hash];
   }
 
-  function cancelOrder(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint[2] P, uint[2] rs) {
-    bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+  function cancelOrder(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, uint[2] memory P, uint[2] memory rs) public {
+    bytes32 hash = sha256(abi.encodePacked(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce));
     if (!(orders[msg.sender][hash] || validateSignature(hash, rs, P))) revert();
     address user = pubkeyToAddress(P);
     orderFills[user][hash] = amountGet;
-    Cancel(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, user);
+    emit Cancel(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, user);
   }
 }

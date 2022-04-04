@@ -1,11 +1,11 @@
-pragma solidity ^0.4.15;
+pragma solidity >= 0.4.0 < 0.7.0;
 import './SafeMath.sol';
 import './Owner.sol';
 import './Watt.sol';
 import './Token.sol';
 
 
-contract ModelS is SafeMath , Owner{
+contract ModelS is SafeMath , Owner {
 	address public watt;
     address public tsl;
     address public fund;
@@ -20,7 +20,7 @@ contract ModelS is SafeMath , Owner{
     event Interval(address _address, uint _interval);
     event TslPerWatt(address _address, uint _tslPerWatt);
     
-    function ModelS(address _watt, address _tsl, address _fund, uint _allowanceLimit, uint _interval, uint _tslPerWatt) {
+    constructor(address _watt, address _tsl, address _fund, uint _allowanceLimit, uint _interval, uint _tslPerWatt) public {
         oneWatt = 1;
         uint d = Token(_watt).decimals();
         for (uint8 i=0;i<d;++i) oneWatt *= 10;
@@ -33,23 +33,23 @@ contract ModelS is SafeMath , Owner{
         tslPerWatt = _tslPerWatt;
     }
 
-    function setInterval(uint _interval) onlyOwner {
+    function setInterval(uint _interval) public onlyOwner {
         interval = _interval;
-        Interval(msg.sender, _interval);
+        emit Interval(msg.sender, _interval);
     }
 
-    function setTslPerWatt(uint _tslPerWatt) onlyOwner {
+    function setTslPerWatt(uint _tslPerWatt) public onlyOwner {
         tslPerWatt = _tslPerWatt;
-        TslPerWatt(msg.sender, _tslPerWatt);
+        emit TslPerWatt(msg.sender, _tslPerWatt);
     }
 
-    function register(address _account) {
-        if (Token(tsl).allowance(_account, this) < allowanceLimit) revert();
+    function register(address _account) public {
+        if (Token(tsl).allowance(_account, address(this)) < allowanceLimit) revert();
         accounts.push(_account);
-        Register(_account, accounts.length);
+        emit Register(_account, accounts.length);
     }
 
-    function tick() onlyOwner {
+    function tick() public onlyOwner {
         if ((block.timestamp - lastBlock) < interval) revert();
         uint totalValue = 0;
         for (uint i=0; i < accounts.length; ++i) {
@@ -62,6 +62,6 @@ contract ModelS is SafeMath , Owner{
             totalValue += amount;
         }
         lastBlock = block.timestamp;
-        Tick(msg.sender, accounts.length, totalValue);
+        emit Tick(msg.sender, accounts.length, totalValue);
     }
 }

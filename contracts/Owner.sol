@@ -1,9 +1,9 @@
-pragma solidity ^0.4.15;
+pragma solidity >= 0.4.0 < 0.7.0;
 
 
 contract Owner {
     address public owner;
-    function Owner() {
+    constructor() public {
         owner = msg.sender;
     }
 
@@ -12,7 +12,7 @@ contract Owner {
         _;
     }
 
-    function changeOwner(address _owner) onlyOwner {
+    function changeOwner(address _owner) public onlyOwner {
         owner = _owner;
     }
 }

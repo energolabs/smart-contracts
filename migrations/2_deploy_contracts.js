@@ -9,10 +9,10 @@ var humanstandardtoken = artifacts.require("./HumanStandardToken.sol");
 var exchange = artifacts.require("./Exchange.sol");
 
 module.exports = function(deployer) {
-  // deployer.deploy(token);
-  // deployer.deploy(safemath);
-  // deployer.deploy(standardtoken);
+  //deployer.deploy(token);
+  //deployer.deploy(safemath);
+  //deployer.deploy(standardtoken);
   deployer.deploy(exchange);
-  deployer.deploy(tsl, 1000000000000000000000000000, 'TESLA', 18, 'TSL');
+  deployer.deploy(tsl, '1000000000000000000000000000', 'TESLA', 18, 'TSL');
   deployer.deploy(watt, 'Watt1', 1, 'WAT', 'China');
 };

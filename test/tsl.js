@@ -6,7 +6,7 @@ contract('Tsl', function(accounts) {
       return instance.totalSupply.call();
     }).then(function(balance) {
       console.log(balance.valueOf());
-      assert.equal(balance.valueOf(), 1000000000000000000000000000, "bad totalSupply");
+      assert.equal(balance.valueOf(), '1000000000000000000000000000', "bad totalSupply");
     });
   });
 
